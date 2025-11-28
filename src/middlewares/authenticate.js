@@ -1,31 +1,25 @@
 import { StatusCodes } from "http-status-codes";
-import Jwt from "jsonwebtoken";
 import commonHelpers from '~/helpers/commonHelpers';
 import tableConstants from '~/constants/tableConstants';
 import BaseModel from '~/models/BaseModel';
+import { validateToken } from "../libraries/tokenValidator";
 
 const baseModelObj = new BaseModel();
 
-const jwtVerifyToken = async (req, res, next) => {
-
-    /* get jwt to secret key from env file*/
-    const secretKey = process.env.JWT_SECRET_KEY;
-    if (!secretKey) {
-        throw new Error('jwt-secret-key is not defined in the env file');
-    }
-
-    /*get jwt token from requet*/
-    const token =
-        req.body.token || req.query.token || req.headers["access-token"];
-
-    /*set error message when token key not found*/
-    if (!token) {
-        return await commonHelpers.getErrorResponse(res, StatusCodes.FORBIDDEN, 'ACCESS_TOKEN_REQUIRED');
-    }
-
+const authenticate = async (req, res, next) => {
     try {
-        /*verify token and add user key in response */
-        const decoded = Jwt.verify(token, secretKey);
+        // get jwt token from headers
+        const accessToken = req.headers["access-token"];
+
+        // set error message when token key not found
+        if (!accessToken || !accessToken.startsWith('Bearer ')) {
+            return await commonHelpers.getErrorResponse(res, StatusCodes.UNAUTHORIZED, 'MISSING_OR_MALFORMED_AUTH_TOKEN');
+        }
+
+        const token = accessToken.substring('Bearer '.length).trim();
+
+        // verify token and got decoded data
+        const decoded = await validateToken(token);
 
         if (!decoded.deviceId || !decoded.userId) {
             return await commonHelpers.getErrorResponse(res, StatusCodes.UNAUTHORIZED, 'INVALID_TOKEN');
@@ -33,7 +27,6 @@ const jwtVerifyToken = async (req, res, next) => {
 
         // fetch device id from DB
         decoded.userId = await commonHelpers.decrypt(decoded.userId);
-
         const userData = await baseModelObj.fetchObjWithSingleRecord({ 'userId': decoded.userId }, ['deviceId', 'status', 'isDeleted'], tableConstants.USERS);
 
         // check user's delete status
@@ -53,11 +46,12 @@ const jwtVerifyToken = async (req, res, next) => {
 
         // set user data in request data
         req.user = decoded;
+
+        return next();
     } catch (err) {
         return await commonHelpers.getErrorResponse(res, StatusCodes.UNAUTHORIZED, 'INVALID_TOKEN');
     }
 
-    return next();
 };
 
-module.exports = jwtVerifyToken;
+module.exports = authenticate;

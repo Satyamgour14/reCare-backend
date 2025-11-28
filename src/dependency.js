@@ -14,7 +14,7 @@ container.register({
   DateTimeUtil: asClass(require('~/utils/DateTimeUtil')).singleton(),
   passwordHash: asValue(require("~/utils/passwordHash").default),
   checkApiHeaders: asValue(require("~/middlewares/checkApiHeaders")),
-  jwtVerifyToken: asValue(require("~/middlewares/jwtVerifyToken")),
+  authenticate: asValue(require("~/middlewares/authenticate")),
   JwtAuthSecurity: asClass(require('~/libraries/JwtAuthSecurity')).singleton(),
   Email: asClass(require('~/libraries/Email')).singleton(),
   FileUpload: asClass(require('~/libraries/FileUpload')).singleton(),
