@@ -1,0 +1,69 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Chatlotte",
+        "description": "<strong>This is an api doc for Chatlotte project API's.</strong>",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:5100/user/v1",
+            "description": "Local server"
+        }
+    ],
+    "security": [
+        {
+            "ApiKeyAuth": []
+        },
+        {
+            "DeviceId": []
+        },
+        {
+            "DeviceType": []
+        },
+        {
+            "DeviceToken": []
+        },
+        {
+            "AccessToken": []
+        }
+    ],
+    "paths": {},
+    "tags": {
+        "$ref": "././global_common_components.json"
+    },
+    "components": {
+        "securitySchemes": {
+            "ApiKeyAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "api-key",
+                "description": "Example value: $x3cv1!x3c5v4df8g7vdf#v45v^s5t7grs68f&7gs3d5vd5fg@787hdfhh!"
+            },
+            "DeviceId": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "device-id",
+                "description": "Example value: 12345"
+            },
+            "DeviceType": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "device-type",
+                "description": "Example value: (1:android, 2:ios, 3:web)"
+            },
+            "DeviceToken": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "device-token",
+                "description": "Example value: abcxyz"
+            },
+            "AccessToken": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "access-token",
+                "description": "Example value: Get {token} from Login & Signup API"
+            }
+        }
+    }
+}
