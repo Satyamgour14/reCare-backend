@@ -1,0 +1,30 @@
+{
+  "presets": [
+    "@babel/preset-env"
+  ],
+  "plugins": [
+    [
+      "babel-plugin-root-import",
+      {
+        "paths": [
+          {
+            "rootPathSuffix": "./src/",
+            "rootPathPrefix": "~/"
+          },
+          {
+            "rootPathSuffix": "./src/modules/",
+            "rootPathPrefix": "!/"
+          },
+          {
+            "rootPathSuffix": "/uploads/",
+            "rootPathPrefix": "^/"
+          },
+          {
+            "rootPathSuffix": "./",
+            "rootPathPrefix": "*/"
+          }
+        ]
+      }
+    ]
+  ]
+}
