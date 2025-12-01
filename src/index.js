@@ -67,7 +67,7 @@ app.use(notFound); //return default error message not found
 
 global.errorObj = { "status_code": 500, "message": "Internal server error" };
 if (process.env.NODE_ENV !== 'test') {
-    app.listen(app.get("port"), async() => {
+    app.listen(app.get("port"), async () => {
         console.log(`Server listing at http://${app.get("host")}:${app.get("port")}`)
         await checkDbConnection();
     })

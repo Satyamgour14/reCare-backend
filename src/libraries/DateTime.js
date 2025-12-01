@@ -112,7 +112,7 @@ class DateTime {
     async getDifferenceInMinutes(startTime, endTime) {
         const start = moment.utc(startTime, "YYYY-MM-DD HH:mm:ss");
         const end = moment.utc(endTime, "YYYY-MM-DD HH:mm:ss");
-        
+
         const minutes = await moment.duration(end.diff(start)).as("minutes");
         return Math.abs(minutes);
     }

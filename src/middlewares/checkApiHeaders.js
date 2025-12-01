@@ -52,7 +52,7 @@ const checkApiHeaders = async (req, res, next) => {
 
         const apiAccessKey = req.headers["api-key"],
             deviceType = parseInt(req.headers["device-type"]);
-        
+
         if (deviceType !== commonConstants.DEVICE.ANDROID && deviceType !== commonConstants.DEVICE.IOS && deviceType !== commonConstants.DEVICE.WEBSITE) {
             const responseObj = { "code": commonHelpers.getResponseCode('INVALID_DEVICE_TYPE') };
             return res.status(400).json(responseObj);

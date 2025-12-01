@@ -12,11 +12,11 @@ class NotificationHelper {
         try {
             // fetch receiver detail
             const condition = { "userId": notificationData.receiverId },
-            selectFileds = ["deviceToken", "notificationEnable", "language"],
-            receiverInfo = await this.baseModel.fetchObjWithSelectedFields(condition, selectFileds, this.tableConstants.USERS),
-            deviceToken = receiverInfo[0].deviceToken,
-            notificationEnable = receiverInfo[0].notificationEnable,
-            language = receiverInfo[0].language;
+                selectFileds = ["deviceToken", "notificationEnable", "language"],
+                receiverInfo = await this.baseModel.fetchObjWithSelectedFields(condition, selectFileds, this.tableConstants.USERS),
+                deviceToken = receiverInfo[0].deviceToken,
+                notificationEnable = receiverInfo[0].notificationEnable,
+                language = receiverInfo[0].language;
 
             const validationResult = await this.validateAndPrepNotification(notificationData, notificationType, language);
 

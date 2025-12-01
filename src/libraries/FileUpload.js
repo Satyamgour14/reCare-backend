@@ -1,7 +1,7 @@
 import fs from "fs/promises"; // Using promises for async operations
 import uniqid from "uniqid";
 import commonConstants from "~/constants/commonConstants";
-import commonHelpers from "~/helpers/commonHelpers";
+// import commonHelpers from "~/helpers/commonHelpers";
 import sharp from "sharp";
 // import AWS from "aws-sdk";
 import Path from "path";

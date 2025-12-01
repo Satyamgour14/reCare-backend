@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { createContainer, asClass, asValue} = require('awilix');
+const { createContainer, asClass, asValue } = require('awilix');
 const container = createContainer();
 
 // User module's all dependency

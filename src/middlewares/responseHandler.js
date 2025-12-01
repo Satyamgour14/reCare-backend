@@ -32,7 +32,7 @@ class responseHandler {
             ...(responseData.message !== undefined && { "message": responseData.message }),
             "code": responseData.code === undefined ? null : responseData.code,
             "data": responseData.data
-        };                
+        };
         return response.status(HttpStatus).json(responseObj);
     }
 

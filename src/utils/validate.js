@@ -29,8 +29,8 @@ const validateSchema = function (req, schema) {
         // get fist error message 
         var errorFirstMsg;
         for (const resError of validate.errors) {
-            if(resError.message) {
-                errorFirstMsg =  resError.message;
+            if (resError.message) {
+                errorFirstMsg = resError.message;
                 break;
             }
         }

@@ -214,7 +214,7 @@ class DateTimeUtil {
                 isSame: false,
                 isAfter: false
             };
-          
+
         if (inputDate.isBefore(moment().utc(), 'day')) { // Checking past date
             response.isBefore = true;
         } else if (inputDate.isSame(moment().utc(), 'day')) { // Checking it's today or not
@@ -222,7 +222,7 @@ class DateTimeUtil {
         } else { // Checking future date
             response.isAfter = true;
         }
-        return response; 
+        return response;
     }
 
     async compareTwoTimes(time2, time1 = '', format = 'HH:mm') {
@@ -300,7 +300,7 @@ class DateTimeUtil {
      * @returns {Object} The resultant snake_case object.
      */
     timestampWithAddData(addData, timestamp = new Date(), timeUnit = "minutes", format = "YYYY-MM-DD HH:mm:ss") {
-        
+
         return moment(timestamp, format)
             .add(addData, timeUnit).format(format);
     }
