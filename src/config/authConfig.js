@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 export const authConfig = {
     issuer: process.env.OAUTH_ISSUER,
     audience: process.env.OAUTH_AUDIENCE,

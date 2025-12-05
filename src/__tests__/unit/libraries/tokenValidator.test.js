@@ -24,7 +24,7 @@ const { validateToken } = require('../../../libraries/tokenValidator');
 describe('Library - validateToken', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        process.env.FORBIDDEN_FIELDS_IN_TOKEN = '';
+        process.env.FORBIDDEN_FIELDS_IN_TOKEN = [];
     });
 
     test('resolves decoded payload when jwt.verify succeeds and no forbidden fields', async () => {
