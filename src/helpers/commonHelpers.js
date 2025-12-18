@@ -206,10 +206,7 @@ async function generateRandomNumericStringFromTime(length, prefix = "") {
  * @returns {string}
  */
 const encryptWithCrypto = (text) => {
-    const secretKey = process.env.CRYPTO_SECRET_KEY;
-    if (!secretKey) {
-        throw new Error("CRYPTO_SECRET_KEY is not defined in the env file");
-    }
+    const secretKey = getRequiredEnv('CRYPTO_SECRET_KEY');
     return CryptoJS.AES.encrypt(text, secretKey).toString();
 };
 
@@ -219,10 +216,7 @@ const encryptWithCrypto = (text) => {
  * @returns {string}
  */
 const decryptWithCrypto = (encryptedText) => {
-    const secretKey = process.env.CRYPTO_SECRET_KEY;
-    if (!secretKey) {
-        throw new Error("CRYPTO_SECRET_KEY is not defined in the env file");
-    }
+    const secretKey = getRequiredEnv('CRYPTO_SECRET_KEY');
     const bytes = CryptoJS.AES.decrypt(encryptedText, secretKey);
     return bytes.toString(CryptoJS.enc.Utf8);
 };
@@ -276,6 +270,15 @@ async function imageValidator(fileData) {
     return { status: true };
 }
 
+function getRequiredEnv(key) {
+    const value = process.env[key];
+    if (value === undefined || value === '') {
+        throw new Error(`Missing required environment variable: ${key}`);
+    }
+    return value;
+}
+
+
 const commonHelpers = {
     getOtp,
     encrypt,
@@ -293,6 +296,7 @@ const commonHelpers = {
     getJwtToken,
     getErrorResponse,
     imageValidator,
+    getRequiredEnv
 };
 
 export default commonHelpers;

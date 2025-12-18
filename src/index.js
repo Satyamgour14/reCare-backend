@@ -8,9 +8,12 @@ import dotenv from "dotenv";
 
 import { notFound } from "./middlewares/errorHandler";
 import logger from "~/utils/logger";
-import { userV1ApiRoutes } from "./modules/user/v1/routes";
+import { v1ApiRoutes } from "./modules/v1/routes";
 import swaggerDefination from "~/api-doc/_build/main_doc.json";
-import knexConfig from "./config/knexfile";
+// import knexConfig from "./config/knexfile";
+import db from "./config/knexfile";
+
+import commonHelpers from "./helpers/commonHelpers";
 
 dotenv.config();
 
@@ -21,12 +24,12 @@ dotenv.config();
  */
 
 const app = express();
-const APP_PORT = process.env.APP_PORT;
-const APP_HOST = process.env.APP_HOST;
-const NODE_ENV = process.env.NODE_ENV;
+const NODE_ENV = commonHelpers.getRequiredEnv('NODE_ENV');
+const APP_HOST = commonHelpers.getRequiredEnv('APP_HOST');
+const APP_PORT = commonHelpers.getRequiredEnv('APP_PORT');
 
-app.set("port", APP_PORT);
 app.set("host", APP_HOST);
+app.set("port", APP_PORT);
 
 // Global error object (legacy usage in other modules)
 global.errorObj = {
@@ -48,7 +51,7 @@ app.use(fileUpload());
 app.use(helmet());
 
 // CORS configuration - allow multiple domains from env
-let allowedDomains = process.env.CORS_ALLOW_DOMAIN || "";
+let allowedDomains = commonHelpers.getRequiredEnv('CORS_ALLOW_DOMAIN');
 allowedDomains = allowedDomains.split(",").map((domain) => domain.trim()).filter(Boolean);
 
 app.use(
@@ -101,7 +104,7 @@ app.use("/coverage-report", express.static(Path.join(__dirname, "../coverage/lco
 
 async function checkDbConnection() {
     try {
-        await knexConfig.raw("SELECT 1 as dbConnection");
+        await db.raw("SELECT 1 FROM knex_migrations ");
         logger.info("DB CONNECTED SUCCESSFULLY");
     } catch (err) {
         logger.error("DB CONNECTION FAILED:", err);
@@ -114,7 +117,7 @@ async function checkDbConnection() {
  * Route registration
  * ---------------------------------------------------------------------------
  */
-app.use("/user/v1", userV1ApiRoutes);
+app.use("/v1", v1ApiRoutes);
 
 
 /**

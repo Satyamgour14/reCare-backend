@@ -146,6 +146,11 @@ const commonConstants = {
     DATA_VISIBILITY: {
         HIDDEN: 1,
         VISIBLE: 0
+    },
+
+    LOG_EVENTS: {
+        INGEST_ACCEPTED: 'INGEST_ACCEPTED',
+        INGEST_ERROR: 'INGEST_ERROR'
     }
 };
 

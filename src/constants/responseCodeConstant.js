@@ -41,6 +41,9 @@ const responseCodeConstant = {
 	FILE_SIZE_LIMIT: 211,
 	INVALID_FILE_EXTENSION: 212,
 	PROFILE_IMAGE_REQUIRED: 213,
+
+
+	UNSUPPORTED_MEDIA_TYPE: 415
 }
 
 export default responseCodeConstant;

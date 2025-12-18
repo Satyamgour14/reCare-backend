@@ -9,5 +9,6 @@
 const tableConstants = {
     USERS: "users",
     NOTIFICATIONS: "notifications",
+    LANDING_BATCHES: "landing_batches",
 };
 export default tableConstants;
