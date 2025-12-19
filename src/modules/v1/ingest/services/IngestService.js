@@ -20,8 +20,12 @@ class IngestServices {
      * @returns 
      */
     async computeChecksumFromBody(body) {
-        const str = JSON.stringify(body);
-        return crypto.createHash('md5').update(str).digest('hex');
+        const payloadStr = JSON.stringify(body);
+        return {
+            checksum: crypto.createHash('md5').update(payloadStr).digest('hex'),
+            buffer: Buffer.from(payloadStr, 'utf8'),
+            byteSize: Buffer.byteLength(payloadStr, 'utf8')
+        };
     }
 
     /**
@@ -30,7 +34,7 @@ class IngestServices {
      */
     async handlePubSubFailure(pubSubData) {
 
-        const { transmissionId, sourceSystem, checksum, partnerIdentity, error } = pubSubData;
+        const { transmissionId, sourceSystem, checksum, partnerIdentity, status, error } = pubSubData;
 
         await publishDlq({
             transmissionId,
@@ -40,15 +44,23 @@ class IngestServices {
             timestamp: this.DateTimeUtil.getCurrentTimeObjForDB()
         });
 
-        await this.IngestModel.updateByTransmissionId(transmissionId, {
-            status: 'failed'
-        });
+        await this.IngestModel.updateByTransmissionId(transmissionId, { status });
 
         console.error(this.commonConstants.LOG_EVENTS.INGEST_ERROR, {
             transmissionId,
             partnerIdentity,
             sourceSystem,
             error: error
+        });
+
+        return await this.commonHelpers.prepareResponse(StatusCodes.OK, 'SUCCESS', {
+            transmissionId,
+            status,
+            pubsub: {
+                success: false,
+                reason: 'PUBSUB_PERMISSION_DENIED_OR_ERROR',
+                requiredRole: 'roles/pubsub.publisher'
+            }
         });
     }
 
@@ -67,7 +79,7 @@ class IngestServices {
         const { partnerReferenceId, sourceSystem, events, partnerIdentity } = reqBody;
 
         if (!sourceSystem || typeof sourceSystem !== 'string' || !Array.isArray(events) || events.length === 0) {
-            return await this.commonHelpers.prepareResponse(StatusCodes.BAD_REQUEST, '', { message: "Invalid request envelope" });
+            return await this.commonHelpers.prepareResponse(StatusCodes.BAD_REQUEST, 'VALIDATION_ERROR', { message: "Invalid request envelope" });
         }
 
         for (const ev of events) {
@@ -77,75 +89,64 @@ class IngestServices {
                 typeof ev.resident_id !== 'string' ||
                 typeof ev.timestamp !== 'string'
             ) {
-                return await this.commonHelpers.prepareResponse(StatusCodes.BAD_REQUEST, '', { message: "Invalid event in events array" });
+                return await this.commonHelpers.prepareResponse(StatusCodes.BAD_REQUEST, 'VALIDATION_ERROR', { message: "Invalid event in events array" });
             }
         }
 
         const transmissionId = crypto.randomUUID();
         const eventCount = events.length;
-        const checksum = await this.computeChecksumFromBody(reqBody);
+        const { checksum, buffer, byteSize } = await this.computeChecksumFromBody(reqBody);
 
         try {
-            const existing = await this.IngestModel.getBySourceAndChecksum(
-                sourceSystem,
-                checksum
-            );
+            const existing = await this.IngestModel.getBySourceAndChecksum(sourceSystem, checksum);
+            let status = existing ? 'duplicate' : 'received'
 
             await this.IngestModel.createBatch({
                 transmission_id: transmissionId,
                 partner_reference_id: partnerReferenceId || null,
                 source: sourceSystem,
                 gcs_uri: null,
-                byte_size: null,
+                byte_size: byteSize,
                 checksum,
-                status: existing ? 'duplicate' : 'received',
+                status,
                 received_at: this.DateTimeUtil.getCurrentTimeObjForDB()
             });
 
-            const { gcsUri, byteSize } = await writeBatchToGcs(transmissionId, reqBody);
-            
-            await this.IngestModel.updateByTransmissionId(transmissionId, {
-                gcs_uri: gcsUri,
-                byte_size: byteSize
-            });
+            // 1) Persist raw payload (PHI) to GCS - storage service handles CMEK / naming convention
+            const { gcsUri } = await writeBatchToGcs(transmissionId, sourceSystem, buffer); // Get gcsUri
 
-            const metadata = {
-                transmissionId,
-                partnerIdentity,
-                sourceSystem,
-                eventCount,
-                gcsUri,
-                checksum,
-                receivedAt: this.DateTimeUtil.getCurrentTimeObjForDB()
-            };
-            const pub = await publishIngestMetadata(metadata);
-            
-            if (!pub.success) {
+            await this.IngestModel.updateByTransmissionId(transmissionId, { gcs_uri: gcsUri });
 
-                await this.handlePubSubFailure({
-                    transmissionId,
-                    sourceSystem,
-                    checksum,
-                    partnerIdentity,
-                    error: pub.error || pub.code
-                });
+            let messageId = null;
+            if (status != 'duplicate') {
 
-                return await this.commonHelpers.prepareResponse(StatusCodes.OK, 'SUCCESS', {
-                    transmissionId,
-                    status: 'accepted',
-                    pubsub: {
-                        success: false,
-                        reason: 'PUBSUB_PERMISSION_DENIED_OR_ERROR',
-                        requiredRole: 'roles/pubsub.publisher'
-                    }
-                });
+                const metadata = {
+                    transmissionId, partnerIdentity, sourceSystem, eventCount, gcsUri, checksum, receivedAt: this.DateTimeUtil.getCurrentTimeObjForDB()
+                };
+
+                // Publish to Pub/Sub (metadata-only). The message must not contain PHI.
+                const pub = await publishIngestMetadata(metadata);
+                console.log('pub');
+
+                // Pubsub publishing failed. Soft-failure: attempt to publish DLQ entry and mark row failed.
+                if (!pub.success) {
+                    status = 'failed';
+                    return await this.handlePubSubFailure({
+                        transmissionId,
+                        sourceSystem,
+                        checksum,
+                        partnerIdentity,
+                        status,
+                        error: pub.error || pub.code
+                    });
+                }
+
+                messageId = pub.messageId;
+                status = 'published';
+                await this.IngestModel.updateByTransmissionId(transmissionId, { status });
             }
 
-            await this.IngestModel.updateByTransmissionId(transmissionId, {
-                status: 'published'
-            });
-
-            console.info(this.commonConstants.LOG_EVENTS.INGEST_ACCEPTED, {
+            console.info(this.commonConstants.LOG_EVENTS.INGEST_PUBLISHED, {
                 transmissionId,
                 partnerIdentity,
                 sourceSystem,
@@ -153,8 +154,12 @@ class IngestServices {
             });
 
             return await this.commonHelpers.prepareResponse(StatusCodes.OK, 'SUCCESS', {
-                transmissionId, status: 'accepted',
-                pubsub: { success: true, messageId: pub.messageId }
+                transmissionId,
+                status,
+                pubsub: {
+                    success: messageId ? true : false,
+                    messageId
+                }
             });
 
         } catch (error) {
@@ -173,14 +178,14 @@ class IngestServices {
                     error: error.message,
                     timestamp: this.DateTimeUtil.getCurrentTimeObjForDB()
                 });
-            } catch (e) { }
 
-            try {
-                await this.IngestModel.updateByTransmissionId(transmissionId, {
-                    status: 'failed'
-                });
-            } catch (e) { }
-            return await this.commonHelpers.prepareResponse(StatusCodes.INTERNAL_SERVER_ERROR, 'INTERNAL_SERVER_ERROR', { message: "Something wrong! Internal Server Error", error: error.message });
+                await this.IngestModel.updateByTransmissionId(transmissionId, { status: 'failed' });
+
+            } catch (e) {
+                return await this.commonHelpers.prepareResponse(StatusCodes.INTERNAL_SERVER_ERROR, 'INTERNAL_SERVER_ERROR', { message: e.message || "Something wrong! Internal Server Error" });
+            }
+
+            return await this.commonHelpers.prepareResponse(StatusCodes.INTERNAL_SERVER_ERROR, 'INTERNAL_SERVER_ERROR', { message: error.message || "Something wrong! Internal Server Error" });
         }
     }
 }

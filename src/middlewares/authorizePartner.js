@@ -1,8 +1,7 @@
 const { StatusCodes } = require("http-status-codes");
-const { allowedSubjects } = require("../config/envConfig");
 
-const BEARER_PREFIX = 'bearer ';
-
+const BEARER_PREFIX = 'bearer';
+const allowedSubjects = (process.env.ALLOWED_SUBJECTS || '').split(';').filter(Boolean);
 
 function decodeJwtPayload(token) {
     if (!token) return null;
@@ -21,7 +20,6 @@ function decodeJwtPayload(token) {
     }
 }
 
-
 function extractBearerToken(req) {
     const header = req.get('authorization');
     if (!header || typeof header !== 'string') return null;
@@ -31,8 +29,6 @@ function extractBearerToken(req) {
     return header.slice(BEARER_PREFIX.length).trim() || null;
 }
 
-
-
 module.exports = function authorizePartner(req, res, next) {
 
     const token = extractBearerToken(req);
@@ -40,14 +36,10 @@ module.exports = function authorizePartner(req, res, next) {
         return res.status(StatusCodes.UNAUTHORIZED).json({ error: 'Invalid or missing bearer token' });
     }
 
-
-    const payload = {
-        email: 'bharat@recare.ai'
-    }
-    /* const payload = decodeJwtPayload(token);
+    const payload = decodeJwtPayload(token);
     if (!payload) {
         return res.status(StatusCodes.UNAUTHORIZED).json({ error: 'Invalid token payload' });
-    } */
+    }
 
     const subject = payload.email || payload.sub || '';
     if (!subject) {

@@ -19,7 +19,7 @@ class IngestModels extends BaseModel {
             const [row] = await this.db(this.tableConstants.LANDING_BATCHES)
                 .insert(payload)
                 .returning('*');
-            this.logger.info('Insert batch');
+
             return {
                 status: true,
                 data: row,

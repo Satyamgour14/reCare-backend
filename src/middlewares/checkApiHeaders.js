@@ -1,4 +1,5 @@
 require('dotenv').config();
+import { StatusCodes } from 'http-status-codes';
 import commonConstants from '~/constants/commonConstants';
 import commonHelpers from '~/helpers/commonHelpers';
 
@@ -47,7 +48,7 @@ const checkApiHeaders = async (req, res, next) => {
                 "code": commonHelpers.getResponseCode('MISSING_HEADERS'),
                 "errors": errorArray
             };
-            return res.status(400).json(responseObj);
+            return res.status(StatusCodes.BAD_REQUEST).json(responseObj);
         }
 
         const apiAccessKey = req.headers["api-key"],
@@ -55,7 +56,7 @@ const checkApiHeaders = async (req, res, next) => {
 
         if (deviceType !== commonConstants.DEVICE.ANDROID && deviceType !== commonConstants.DEVICE.IOS && deviceType !== commonConstants.DEVICE.WEBSITE) {
             const responseObj = { "code": commonHelpers.getResponseCode('INVALID_DEVICE_TYPE') };
-            return res.status(400).json(responseObj);
+            return res.status(StatusCodes.BAD_REQUEST).json(responseObj);
         }
 
         // check api access key
@@ -73,13 +74,13 @@ const checkApiHeaders = async (req, res, next) => {
                 "code": commonHelpers.getResponseCode('MISSING_HEADERS'),
                 "errors": ["api access key is missing."]
             };
-            return res.status(400).json(responseObj);
+            return res.status(StatusCodes.BAD_REQUEST).json(responseObj);
         }
 
         // check api access key
         if (api_key != apiAccessKey) {
             const responseObj = { "code": commonHelpers.getResponseCode('INVALID_API_KEY') };
-            return res.status(401).json(responseObj);
+            return res.status(StatusCodes.UNAUTHORIZED).json(responseObj);
         }
     }
 

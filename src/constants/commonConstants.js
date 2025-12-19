@@ -149,6 +149,7 @@ const commonConstants = {
     },
 
     LOG_EVENTS: {
+        INGEST_PUBLISHED: 'INGEST_PUBLISHED',
         INGEST_ACCEPTED: 'INGEST_ACCEPTED',
         INGEST_ERROR: 'INGEST_ERROR'
     }

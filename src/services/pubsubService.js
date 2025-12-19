@@ -1,6 +1,5 @@
 'use strict';
 const { PubSub } = require('@google-cloud/pubsub');
-const { ingestTopic, dlqTopic } = require('../config/envConfig');
 const pubsub = new PubSub();
 
 async function publishMessageToTopic(topicName, jsonMessage) {
@@ -17,11 +16,14 @@ async function publishMessageToTopic(topicName, jsonMessage) {
 }
 
 async function publishIngestMetadata(metadata) {
+  const ingestTopic = process.env.INGEST_TOPIC;
+  if (!ingestTopic) throw new Error('Missing required environment variable INGEST_TOPIC.');
   return publishMessageToTopic(ingestTopic, metadata);
 }
 
 async function publishDlq(metadata) {
-  if (!dlqTopic) return { success: false, error: 'DLQ_TOPIC not configured' };
+  const dlqTopic = process.env.DLQ_TOPIC;
+  if (!dlqTopic) throw new Error('Missing required environment variable DLQ_TOPIC.');
   return publishMessageToTopic(dlqTopic, metadata);
 }
 
